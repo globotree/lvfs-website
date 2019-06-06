@@ -102,3 +102,4 @@ from app import views_protocol
 from app import views_category
 from app import views_test
 from app import views_shard
+from app import views_agent

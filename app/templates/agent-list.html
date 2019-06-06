@@ -1,0 +1,35 @@
+{% extends "default.html" %}
+{% block title %}Agents{% endblock %}
+
+{% block content %}
+
+{% if agents|length == 0 %}
+<p class="text-muted">
+  No agents have registered with this server.
+</p>
+
+{% else %}
+
+<table class="table">
+{% for agent in agents %}
+  <tr class="row">
+    <td class="col-sm-1">
+      <img src="/img/{{agent.state}}.svg" width="48"/>
+    </td>
+    <td class="col-sm-9">
+      <h4>{{agent.hostname}}</h4>
+      <p class="text-secondary">
+        Updated from {{agent.addr}} {{format_humanize_naturaltime(agent.timestamp)}}
+      </p>
+    </td>
+    <td class="col-sm-2">
+      <a href="{{url_for('.agent_details', agent_id=agent.agent_id)}}"
+         class="btn btn-primary btn-block">Details</a>
+    </td>
+  </tr>
+</table>
+{% endfor %}
+
+{% endif %}
+
+{% endblock %}

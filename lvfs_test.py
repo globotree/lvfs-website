@@ -1836,5 +1836,26 @@ ma+I7fM5pmgsEL4tkCZAg0+CPTyhHkMV/cWuOZUjqTsYbDq1pZI=
         # try to log in with the new password
         self.login('testuser@fwupd.org', password=password)
 
+    def _agent_post(self, endpoint, agent_hash='deadbeef'):
+        json = """{
+          "ReportVersion" : 1,
+          "AgentId" : "%s"
+        }""" % agent_hash
+        return self.app.post('/lvfs/agent/%s' % endpoint, data=json, follow_redirects=True)
+
+    def test_agent_register_unregister(self):
+
+        # all without logging in
+        rv = self._agent_post('unregister')
+        assert b'agent is not registered' in rv.data, rv.data
+        rv = self._agent_post('register')
+        assert b'agent registered' in rv.data, rv.data
+        rv = self._agent_post('sync')
+        assert b'agent updated' in rv.data, rv.data
+        rv = self._agent_post('sync')
+        assert b'agent updated' in rv.data, rv.data
+        rv = self._agent_post('unregister')
+        assert b'agent unregistered' in rv.data, rv.data
+
 if __name__ == '__main__':
     unittest.main()

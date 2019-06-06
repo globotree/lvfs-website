@@ -15,6 +15,7 @@ import re
 import math
 import hashlib
 import collections
+import json
 from enum import Enum
 
 import onetimepass
@@ -2331,3 +2332,139 @@ class SearchEvent(db.Model):
 
     def __repr__(self):
         return "SearchEvent object %s" % self.search_event_id
+
+class AgentApproval(db.Model):
+
+    # database
+    __tablename__ = 'agent_approvals'
+    __table_args__ = {'mysql_character_set': 'utf8mb4'}
+
+    approval_id = Column(Integer, primary_key=True, unique=True, nullable=False)
+    timestamp = Column(DateTime, nullable=False, default=datetime.datetime.utcnow)
+    user_id = Column(Integer, nullable=False)
+    agent_id = Column(Integer, nullable=True, default=None)
+    checksum = Column(Text, default=None)
+
+    def __init__(self, checksum, user_id=None, agent_id=None):
+        self.checksum = checksum
+        self.user_id = user_id
+        self.agent_id = agent_id
+
+class AgentRelease():
+
+    def __init__(self):
+        self.version = None
+        self.checksum = None
+        self.is_upgrade = False
+        self.blocked_approval = False
+
+    def _parse_from_json(self, item):
+        if 'Version' in item:
+            self.version = item['Version']
+        if 'Checksum' in item:
+            self.checksum = item['Checksum'][0]
+        if 'Flags' in item:
+            for flags in item['Flags']:
+                if flags == 'is-upgrade':
+                    self.is_upgrade = True
+                elif flags == 'blocked-approval':
+                    self.blocked_approval = True
+
+class AgentDevice():
+
+    def __init__(self):
+        self.fwupd_id = None
+        self.name = None
+        self.icon = None
+        self.version = None
+        self.updatable = False
+        self.needs_reboot = False
+        self.releases = []
+
+    def add_release(self, rel):
+        self.releases.append(rel)
+
+    @property
+    def state(self):
+        for rel in self.releases:
+            if rel.is_upgrade and rel.blocked_approval:
+                return 'update-blocked'
+            if rel.is_upgrade:
+                return 'update-required'
+        return 'uptodate'
+
+    def _parse_from_json(self, item):
+        if 'Name' in item:
+            self.name = item['Name']
+        if 'AgentDeviceId' in item:
+            self.fwupd_id = item['AgentDeviceId']
+        if 'Version' in item:
+            self.version = item['Version']
+        if 'Icons' in item:
+            self.icon = item['Icons'][0]
+        if 'Flags' in item:
+            for flags in item['Flags']:
+                if flags == 'updatable':
+                    self.updatable = True
+                elif flags == 'needs-reboot':
+                    self.needs_reboot = True
+        if 'AgentReleases' in item:
+            for release_item in item['AgentReleases']:
+                rel = AgentRelease()
+                rel._parse_from_json(release_item)
+                self.add_release(rel)
+
+class Agent(db.Model):
+
+    # sqlalchemy metadata
+    __tablename__ = 'agents'
+    __table_args__ = {'mysql_character_set': 'utf8mb4'}
+
+    agent_id = Column(Integer, primary_key=True, unique=True, nullable=False)
+    addr = Column(String(40), nullable=False)
+    agent_hash = Column(String(40), nullable=False)
+    timestamp = Column(DateTime, nullable=False, default=datetime.datetime.utcnow)
+    display_name = Column(Text, default=None)
+    json = Column(Text, default=None)
+
+    def __init__(self, agent_hash=None, addr=None):
+        """ Constructor for object """
+        self.agent_hash = agent_hash
+        self.addr = addr
+        self.timestamp = None
+        self.display_name = None
+        self.json = None
+
+    @property
+    def hostname(self):
+        import socket
+        hostnames = socket.gethostbyaddr(self.addr)
+        if not hostnames:
+            return None
+        return hostnames[0]
+
+    @property
+    def devices(self):
+        devices = []
+        if not self.json:
+            return devices
+        item = json.loads(self.json)
+        if 'AgentDevices' not in item:
+            return devices
+        for device_item in item['AgentDevices']:
+            dev = AgentDevice()
+            dev._parse_from_json(device_item)
+            if not dev.updatable:
+                continue
+            devices.append(dev)
+        return devices
+
+    @property
+    def state(self):
+        for dev in self.devices:
+            if dev.state != 'uptodate':
+                return dev.state
+        return 'uptodate'
+
+    def __repr__(self):
+        return "Agent object %s" % self.agent_id

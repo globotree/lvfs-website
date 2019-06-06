@@ -1,0 +1,79 @@
+{% extends "default.html" %}
+{% block title %}Agent {{agent.hostname}}{% endblock %}
+
+{% block content %}
+
+<h2>Details</h2>
+<table class="table">
+  <tr class="row">
+    <th class="col-sm-3">Agent ID</th>
+    <td class="col-sm-9"><code>{{agent.agent_id}}</code></td>
+  </tr>
+  <tr class="row">
+    <th class="col-sm-3">Address</th>
+    <td class="col-sm-9"><code>{{agent.hostname}} ({{agent.addr}})</code></td>
+  </tr>
+  <tr class="row">
+    <th class="col-sm-3">Last Updated</th>
+    <td class="col-sm-9"><code>{{format_humanize_naturaltime(agent.timestamp)}}</code></td>
+  </tr>
+</table>
+
+{% if agent.devices|length > 0 %}
+<h2>AgentDevices</h2>
+<table class="table">
+{% for dev in agent.devices %}
+  <tr class="row">
+    <td class="col-sm-1">
+      <img src="/img/{{dev.state}}.svg" width="48"/>
+    </td>
+    <td class="col-sm-11">
+      <h5><img src="/img/{{dev.icon}}-symbolic.svg" width="16"/> {{dev.name}} <span class="text-muted">{{dev.version}}</span></h5>
+{% if dev.state == 'uptodate' %}
+      <p class="text-secondary">
+        No updates need to be applied.
+      </p>
+{% else %}
+      <table class="table">
+{% for rel in dev.releases %}
+        <tr class="row table-borderless">
+{% if rel.blocked_approval %}
+          <td class="col-sm-10">
+            <p class="text-danger">
+              Update to {{rel.version}} is currently not approved.
+            </p>
+          </td>
+          <td class="col-sm-2">
+            <a href="{{url_for('.agent_approval_add', agent_id=agent.agent_id, checksum=rel.checksum)}}"
+               class="btn btn-primary btn-block">Approve</a>
+          </td>
+{% elif rel.is_upgrade %}
+          <td class="col-sm-10">
+            <p class="text-danger">
+              Update to {{rel.version}} can be scheduled for next sync.
+            </p>
+{% if dev.needs_reboot %}
+            <p class="text-warning">A reboot is required to deploy this update</p>
+{% endif %}
+          </td>
+          <td class="col-sm-2">
+            <a href="{{url_for('.agent_action_add',
+                               agent_id=agent.agent_id,
+                               fwupd_id=dev.fwupd_id,
+                               checksum=rel.checksum)}}"
+               class="btn btn-primary btn-block">Schedule</a>
+          </td>
+{% endif %}
+        </tr>
+{% endfor %}
+      </table>
+{% endif %}
+  </tr>
+{% endfor %}
+</table>
+{% endif %}
+
+<a href="{{url_for('.agent_json', agent_id=agent.agent_id)}}"
+   class="btn btn-primary">Show JSON</a>
+
+{% endblock %}
