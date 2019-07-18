@@ -49,15 +49,16 @@ def analytics_month():
                            data_days=data[::-1])
 
 @app.route('/lvfs/analytics/year')
+@app.route('/lvfs/analytics/year/<int:ts>')
 @login_required
 @admin_login_required
-def analytics_year():
+def analytics_year(ts=3):
     """ A analytics screen to show information about users """
 
     # this is somewhat klunky
     data = []
     now = datetime.date.today() - datetime.timedelta(days=1)
-    for _ in range(12):
+    for _ in range(12 * ts):
         datestrold = _get_datestr_from_datetime(now)
         now -= datetime.timedelta(days=30)
         datestrnew = _get_datestr_from_datetime(now)
@@ -74,7 +75,7 @@ def analytics_year():
 
     return render_template('analytics-year.html',
                            category='analytics',
-                           labels_months=_get_chart_labels_months()[::-1],
+                           labels_months=_get_chart_labels_months(ts)[::-1],
                            data_months=data[::-1])
 
 def _user_agent_wildcard(user_agent):

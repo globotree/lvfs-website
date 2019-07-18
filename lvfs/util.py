@@ -291,15 +291,13 @@ def _json_error(msg=None, errcode=400):
                     status=errcode, \
                     mimetype="application/json")
 
-def _get_chart_labels_months():
+def _get_chart_labels_months(ts=1):
     """ Gets the chart labels """
     now = datetime.date.today()
     labels = []
-    offset = 0
-    for i in range(0, 12):
-        if now.month - i == 0:
-            offset = 1
-        labels.append(calendar.month_name[now.month - i - offset])
+    for i in range(0, 12 * ts):
+        then = now - datetime.timedelta((i + 1) * 30)
+        labels.append('{} {}'.format(calendar.month_name[then.month], then.year))
     return labels
 
 def _get_chart_labels_days(limit=30):
