@@ -15,6 +15,7 @@ PyMySQL
 GeoIP
 iso3166
 pefile
+psycopg2
 pyasn1_modules
 pylint
 pytest-cov
