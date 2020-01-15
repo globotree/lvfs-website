@@ -26,7 +26,7 @@ The official instance is set up using puppet on RHEL 7, on which you could use:
 
 You can set up the development database manually using:
 
-    $ mysql -u root
+    $ psql -u root
     > CREATE DATABASE lvfs;
     > CREATE USER 'test'@'localhost' IDENTIFIED BY 'test';
     > USE lvfs;
@@ -46,7 +46,6 @@ The admin user is set as `sign-test@fwupd.org` with password `Pa$$w0rd`.
     python3 -m virtualenv env
     source env/bin/activate
     pip3 install -r requirements.txt
-    pip3 install mysqlclient
     FLASK_DEBUG=1 ./app.wsgi
 
 You may also need to install introspection dependencies.
@@ -63,8 +62,7 @@ On Fedora:
         GeoIP-devel \
         gnutls-utils \
         gobject-introspection-devel \
-        mariadb-devel \
-        mariadb-server \
+        postgresql-server \
         python36-pip \
         python36-psutil \
         python36-virtualenv
