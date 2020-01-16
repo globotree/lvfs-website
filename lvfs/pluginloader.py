@@ -87,7 +87,7 @@ class PluginBase:
         for setting in self.settings():
             if setting.name == 'Enabled':
                 return self.get_setting_bool(setting.key)
-        return False
+        return True
 
     def __repr__(self):
         return "Plugin object %s" % self.id
