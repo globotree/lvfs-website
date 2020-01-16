@@ -1213,6 +1213,8 @@ class ComponentShardInfo(db.Model):
     guid = Column(String(36), default=None, index=True)
     description = Column(Text, default=None)
     cnt = Column(Integer, default=0)
+    claim_kind = Column(Text, default=None)
+    claim_value = Column(Text, default=None)
 
     # link using foreign keys
     shards = relationship("ComponentShard", cascade='all,delete-orphan')

@@ -39,7 +39,7 @@ def route_modify(component_shard_info_id):
         return redirect(url_for('shards.route_list'))
 
     # modify shard
-    for key in ['description']:
+    for key in ['description', 'claim_kind', 'claim_value']:
         if key in request.form:
             setattr(shard, key, request.form[key])
     db.session.commit()
