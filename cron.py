@@ -119,6 +119,8 @@ def _repair():
     # fix any timestamps that are incorrect
     for md in db.session.query(Component).filter(Component.release_timestamp < 1980):
         fn = _get_absolute_path(md.fw)
+        if not os.path.exists(fn):
+            continue
         print(fn, md.release_timestamp)
         try:
             ufile = UploadedFile(is_strict=False)
